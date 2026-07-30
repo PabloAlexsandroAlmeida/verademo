@@ -5,16 +5,12 @@
 
 # This workflow will initiate a Veracode Static Analysis Pipeline scan, return a results.json and convert to SARIF for upload as a code scanning alert
 
-name: Veracode Static Analysis Pipeline Scan
+name: SAST SCAN
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
-  schedule:
-    - cron: '18 5 * * 2'
+    branches: 
+      - 'feature/**'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 permissions:
