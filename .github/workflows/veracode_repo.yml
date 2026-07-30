@@ -22,5 +22,5 @@ jobs:
         with:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
-          file: "target/verademo.war" # Caminho para o arquivo gerado
+          file: "app/target/verademo.war" # Caminho para o arquivo gerado
           fail_build: true # Interrompe o build se houver falhas de política
