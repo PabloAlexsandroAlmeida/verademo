@@ -1,0 +1,28 @@
+name: Veracode Static Analysis Pipeline Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  pipeline_scan:
+    runs-on: ubuntu-latest
+    name: Veracode Pipeline Scan
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      # Etapa de build/empacotamento (exemplo para Java/Maven)
+      # Recomendamos o uso do autopackager para simplificar o processo
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Veracode Pipeline Scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.1
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: "target/minha-aplicacao.jar" # Caminho para o arquivo gerado
+          fail_build: true # Interrompe o build se houver falhas de política
