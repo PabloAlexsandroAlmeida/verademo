@@ -17,7 +17,7 @@ jobs:
       # Etapa de build/empacotamento (exemplo para Java/Maven)
       # Recomendamos o uso do autopackager para simplificar o processo
       - name: Build with Maven
-        run: mvn clean package -DskipTests
+        run: cd app/ && mvn clean package -DskipTests
 
       - name: Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.1
