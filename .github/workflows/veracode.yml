@@ -36,7 +36,11 @@ jobs:
       with:
         repository: ''
 
-    - run: zip -r veracode-scan-target.zip ./
+    - name: Build with Maven
+      run: cd app/ && mvn clean package -DskipTests
+
+    - name: Packing
+      run: zip -r veracode-scan-target.zip ./
 
     # download the Veracode Static Analysis Pipeline scan jar
     - run: curl --silent --show-error --fail -O https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
