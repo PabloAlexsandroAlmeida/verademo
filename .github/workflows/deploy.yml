@@ -37,7 +37,8 @@ jobs:
       - name: Set Image Name
         id: meta
         run: |
-          IMAGE=${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=${{ env.REGISTRY }}/$REPO/${{ env.IMAGE_NAME }}:${{ github.sha }}
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Login GHCR
