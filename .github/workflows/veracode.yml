@@ -46,6 +46,12 @@ jobs:
       with:
         java-version: 8
         distribution: 'temurin'
+
+    - name: Setup node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        package-manager-cache: false # Disable automatic npm caching if not required
     
     - name: PipelineScan
       id: pipelien-scan
