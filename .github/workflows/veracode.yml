@@ -27,7 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it and copies all sources into ZIP file for submitting for analysis. Replace this section with your applications build steps
     - uses: actions/checkout@v4
       with:
         repository: ''
@@ -37,21 +36,6 @@ jobs:
 
     - name: Packing
       run: zip -r veracode-scan-target.zip ./
-
-    # download the Veracode Static Analysis Pipeline scan jar
-    - run: curl --silent --show-error --fail -O https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
-    - run: unzip -o pipeline-scan-LATEST.zip
-
-    - uses: actions/setup-java@v4
-      with:
-        java-version: 8
-        distribution: 'temurin'
-
-    - name: Setup node
-      uses: actions/setup-node@v7
-      with:
-        node-version: 24
-        package-manager-cache: false # Disable automatic npm caching if not required
     
     - name: PipelineScan
       id: pipelien-scan
@@ -60,9 +44,6 @@ jobs:
         vid: ${{ secrets.VERACODE_API_ID }}
         vkey: ${{ secrets.VERACODE_API_KEY }}
         file: "veracode-scan-target.zip" 
-        request_policy: "VeraDemo Policy"
-        debug: 1
-        fail_build: false
 
     - name: Create fixes from static findings
       id: convert
