@@ -1,0 +1,153 @@
+name: "[CI/CD] - Build and Deploy to AWS EKS"
+
+on:
+  push:
+    branches:
+      - main/**
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: veracode-demo
+  REGISTRY: ghcr.io
+  EKS_CLUSTER: eks-production
+  AWS_REGION: us-east-1
+  NAMESPACE: production
+  DEPLOYMENT_NAME: veracode-demo
+  CONTAINER_NAME: veracode-demo
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+
+  build:
+    name: Build Container
+    runs-on: ubuntu-latest
+
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set Image Name
+        id: meta
+        run: |
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=${{ env.REGISTRY }}/$REPO/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Image
+        run: |
+          docker build \
+            -t ${{ steps.meta.outputs.image }} .
+
+      - name: Push Image
+        run: |
+          docker push ${{ steps.meta.outputs.image }}
+
+  security:
+    name: Veracode Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Pull Image
+        run: |
+          docker pull ${{ needs.build.outputs.image }}
+
+      - name: Veracode Container
+        uses: veracode/container_iac_secrets_scanning@v1.0.8
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          command: scan
+          source: ${{ needs.build.outputs.image }}
+          format: json
+          type: image
+          debug: false
+          fail_build: true
+          fail_build_on_error: true
+          platformType: CLOUD
+          generate_sbom_output: true
+
+      - name: Upload Security Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: veracode-results
+          path: |
+            *.json
+            *.sarif
+            *.spdx
+            *.cyclonedx
+          if-no-files-found: ignore
+
+  deploy:
+    name: Deploy to Amazon EKS
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - security
+
+    steps:
+
+      - name: AWS Authentication
+        run: |
+          echo "=========================================="
+          echo "Authenticating with AWS..."
+          echo "Role Assumed Successfully"
+          echo "=========================================="
+
+      - name: kubeconfig
+        run: |
+          echo "aws eks update-kubeconfig \\"
+          echo "   --region $AWS_REGION \\"
+          echo "   --name $EKS_CLUSTER"
+
+      - name: Namespace Validation
+        run: |
+          echo "kubectl get ns $NAMESPACE"
+
+      - name: Deployment Update
+        run: |
+          echo "kubectl set image deployment/$DEPLOYMENT_NAME \\"
+          echo "$CONTAINER_NAME=${{ needs.build.outputs.image }}"
+
+      - name: Rollout
+        run: |
+          echo "kubectl rollout status deployment/$DEPLOYMENT_NAME"
+
+      - name: Health Check
+        run: |
+          echo "Checking Pods..."
+          echo "Checking Services..."
+          echo "Checking Ingress..."
+          echo "Application Healthy"
+
+      - name: Deployment Summary
+        run: |
+          echo ""
+          echo "==============================="
+          echo "Deployment Simulation Completed"
+          echo "==============================="
+          echo ""
+          echo "Cluster      : $EKS_CLUSTER"
+          echo "Namespace    : $NAMESPACE"
+          echo "Deployment   : $DEPLOYMENT_NAME"
+          echo "Container    : $CONTAINER_NAME"
+          echo "Image        : ${{ needs.build.outputs.image }}"
