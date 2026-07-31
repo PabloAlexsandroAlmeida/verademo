@@ -98,7 +98,7 @@ jobs:
       ###########################################################
 
       - name: Convert to SARIF
-        uses: veracode/veracode-pipeline-scan-results-to-sarif@latest
+        uses: veracode/veracode-pipeline-scan-results-to-sarif@ff08ae5b45d5384cb4679932f184c013d34da9be
         with:
           pipeline-results-json: results.json
 
